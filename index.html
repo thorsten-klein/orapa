@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Orapa Mine</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 96'><g transform='translate(7,30) rotate(-14,32,18)'><polygon points='0,36 64,36 32,0' fill='%233498db' stroke='%231d6fa5' stroke-width='1.4' stroke-linejoin='round'/></g><g transform='translate(47,12) rotate(12,24,24)'><polygon points='24,0 48,24 24,48 0,24' fill='%23ecf0f1' stroke='%237f8c8d' stroke-width='1.4' stroke-linejoin='round'/></g><g transform='translate(51,40) rotate(-12,30,12)'><polygon points='14,0 64,0 50,26 0,26' fill='%23e74c3c' stroke='%23a93226' stroke-width='1.4' stroke-linejoin='round'/></g></svg>">
+<link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+    <!-- Reusable SVG icon sprite (referenced via <use href="#icon-…"/>) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="icon-share" viewBox="0 0 24 24">
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="18" cy="18" r="3"/>
+                <line x1="8.6" y1="10.6" x2="15.4" y2="7.4"/>
+                <line x1="8.6" y1="13.4" x2="15.4" y2="16.6"/>
+            </symbol>
+            <symbol id="icon-copy" viewBox="0 0 24 24">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </symbol>
+        </defs>
+    </svg>
+
+    <div id="app">
+        <header id="topbar">
+            <div id="topbar-left">
+                <button id="btn-back" class="topbar-btn" title="Back to menu" hidden>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
+                <svg class="topbar-logo" viewBox="3 8 116 75" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="tb-grad-blue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#a3d4f7"/><stop offset="55%" stop-color="#3498db"/><stop offset="100%" stop-color="#1d6fa5"/>
+                        </linearGradient>
+                        <linearGradient id="tb-grad-white" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ffffff"/><stop offset="55%" stop-color="#ecf0f1"/><stop offset="100%" stop-color="#95a5a6"/>
+                        </linearGradient>
+                        <linearGradient id="tb-grad-red" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffb3a3"/><stop offset="55%" stop-color="#e74c3c"/><stop offset="100%" stop-color="#a93226"/>
+                        </linearGradient>
+                    </defs>
+                    <g transform="translate(7,30) rotate(-14,32,18)">
+                        <polygon points="0,36 64,36 32,0" fill="url(#tb-grad-blue)" stroke="#1d6fa5" stroke-width="1.4" stroke-linejoin="round"/>
+                    </g>
+                    <g transform="translate(47,12) rotate(12,24,24)">
+                        <polygon points="24,0 48,24 24,48 0,24" fill="url(#tb-grad-white)" stroke="#7f8c8d" stroke-width="1.4" stroke-linejoin="round"/>
+                    </g>
+                    <g transform="translate(51,40) rotate(-12,30,12)">
+                        <polygon points="14,0 64,0 50,26 0,26" fill="url(#tb-grad-red)" stroke="#a93226" stroke-width="1.4" stroke-linejoin="round"/>
+                    </g>
+                </svg>
+                <span id="topbar-title">Orapa</span>
+            </div>
+            <div id="topbar-actions">
+                <button id="btn-undo" class="topbar-btn" title="Undo (Ctrl+Z)" hidden disabled>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="9 14 4 9 9 4"/>
+                        <path d="M4 9h11a5 5 0 0 1 0 10h-4"/>
+                    </svg>
+                </button>
+                <button id="btn-redo" class="topbar-btn" title="Redo (Ctrl+Y)" hidden disabled>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="15 14 20 9 15 4"/>
+                        <path d="M20 9H9a5 5 0 0 0 0 10h4"/>
+                    </svg>
+                </button>
+                <button id="btn-history" class="topbar-btn" title="Logbook" hidden>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12a9 9 0 1 0 3-6.7"/>
+                        <polyline points="3 3 3 9 9 9"/>
+                        <line x1="12" y1="7" x2="12" y2="12"/>
+                        <line x1="12" y1="12" x2="16" y2="14"/>
+                    </svg>
+                </button>
+                <button id="btn-share" class="topbar-btn" title="Share this board" hidden>
+                    <svg class="icon" aria-hidden="true"><use href="#icon-share"/></svg>
+                </button>
+                <button id="btn-info" class="topbar-btn" title="Rules" hidden>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"/>
+                        <line x1="12" y1="16" x2="12" y2="11"/>
+                        <circle cx="12" cy="8" r="0.5" fill="currentColor"/>
+                    </svg>
+                </button>
+                <button id="btn-fullscreen" class="topbar-btn" title="Toggle fullscreen">
+                    <svg class="icon-fs-enter" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+                    </svg>
+                    <svg class="icon-fs-exit" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div id="screens">
+        <!-- Main Menu -->
+        <div id="screen-main" class="screen">
+            <div class="screen-content">
+                <div class="logo-wrap">
+                <svg class="title-logo" viewBox="3 8 116 75" xmlns="http://www.w3.org/2000/svg" aria-label="Orapa Mine logo" role="img">
+                    <defs>
+                        <filter id="logo-glow" x="-30%" y="-30%" width="160%" height="160%">
+                            <feGaussianBlur stdDeviation="2.5" result="b"/>
+                            <feMerge>
+                                <feMergeNode in="b"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        <linearGradient id="grad-blue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#a3d4f7"/>
+                            <stop offset="55%" stop-color="#3498db"/>
+                            <stop offset="100%" stop-color="#1d6fa5"/>
+                        </linearGradient>
+                        <linearGradient id="grad-white" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="55%" stop-color="#ecf0f1"/>
+                            <stop offset="100%" stop-color="#95a5a6"/>
+                        </linearGradient>
+                        <linearGradient id="grad-red" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffb3a3"/>
+                            <stop offset="55%" stop-color="#e74c3c"/>
+                            <stop offset="100%" stop-color="#a93226"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Back: blue large triangle -->
+                    <g transform="translate(7,30) rotate(-14,32,18)" filter="url(#logo-glow)">
+                        <polygon points="0,36 64,36 32,0" fill="url(#grad-blue)" stroke="#1d6fa5" stroke-width="1.4" stroke-linejoin="round"/>
+                        <polyline points="6,33 32,4" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+
+                    <!-- Mid: white diamond (overlaps blue) -->
+                    <g transform="translate(47,12) rotate(12,24,24)" filter="url(#logo-glow)">
+                        <polygon points="24,0 48,24 24,48 0,24" fill="url(#grad-white)" stroke="#7f8c8d" stroke-width="1.4" stroke-linejoin="round"/>
+                        <polyline points="24,4 42,22" fill="none" stroke="rgba(255,255,255,0.95)" stroke-width="2.5" stroke-linecap="round"/>
+                    </g>
+
+                    <!-- Front: red parallelogram (overlaps diamond) -->
+                    <g transform="translate(51,40) rotate(-12,30,12)" filter="url(#logo-glow)">
+                        <polygon points="14,0 64,0 50,26 0,26" fill="url(#grad-red)" stroke="#a93226" stroke-width="1.4" stroke-linejoin="round"/>
+                        <polyline points="20,5 56,5" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                </svg>
+                <span class="sparkle s1"></span>
+                <span class="sparkle s2"></span>
+                <span class="sparkle s3"></span>
+                <span class="sparkle s4"></span>
+                <span class="sparkle s5"></span>
+                <span class="sparkle s6"></span>
+                </div>
+                <h1 class="title">Orapa Mine</h1>
+                <div class="menu-buttons">
+                    <button id="btn-resume-game" hidden>Resume Game</button>
+                    <button id="btn-start-game">Start new game</button>
+                </div>
+                <button id="btn-reset-all" class="reset-all-btn" hidden>Reset all games</button>
+                <div id="intro-rules"></div>
+            </div>
+        </div>
+
+        <!-- Level Select -->
+        <div id="screen-level" class="screen hidden">
+            <div class="screen-content">
+                <h2 id="level-title" class="subtitle">Level</h2>
+                <div id="orientation-switch-container">
+                    <button id="orient-portrait" class="orient-btn">Portrait (8×10)</button>
+                    <button id="orient-landscape" class="orient-btn">Landscape (10×8)</button>
+                </div>
+                <p id="level-subtitle" class="level-subtitle">Select level</p>
+                <div id="level-options" class="menu-buttons vertical"></div>
+            </div>
+            <div class="menu-buttons">
+                <button id="btn-back-to-main-1" class="btn-back">Back</button>
+            </div>
+        </div>
+
+        <!-- Custom Level Creator -->
+        <div id="screen-custom-creator" class="screen hidden">
+            <div class="screen-content custom-creator-layout">
+                <h2 class="subtitle">Create Custom Level</h2>
+                <div class="creator-main-content">
+                    <div class="creator-config">
+                        <h4>1. Board Size</h4>
+                        <div class="steppers steppers-horizontal">
+                            <div class="stepper">
+                                <span>Width</span>
+                                <div class="stepper-buttons">
+                                    <button class="stepper-btn" data-size="W" data-delta="-1">−</button>
+                                    <span class="stepper-val" data-size-val="W">8</span>
+                                    <button class="stepper-btn" data-size="W" data-delta="1">+</button>
+                                </div>
+                            </div>
+                            <div class="stepper">
+                                <span>Height</span>
+                                <div class="stepper-buttons">
+                                    <button class="stepper-btn" data-size="H" data-delta="-1">−</button>
+                                    <span class="stepper-val" data-size-val="H">10</span>
+                                    <button class="stepper-btn" data-size="H" data-delta="1">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <h4>2. Select Color</h4>
+                        <div id="custom-color-selector" class="selector-grid"></div>
+                        <h4>3. Select Shape</h4>
+                        <div id="custom-shape-selector" class="selector-grid"></div>
+                        <div id="custom-gem-preview" class="gem-preview">
+                            <canvas id="custom-gem-preview-canvas"></canvas>
+                            <div class="gem-preview-hint">Pick a color and a shape</div>
+                        </div>
+                        <button id="btn-add-custom-gem" class="add-gem-button">Add this Gem</button>
+                        <p class="random-hint">Alternatively, you can create a random set of gems at once:</p>
+                        <button id="btn-random-level" class="add-gem-button">Add multiple Gems (fully random)</button>
+                    </div>
+                    <div class="creator-preview">
+                        <h4>Level Set (Your Selection)</h4>
+                        <div id="custom-gem-list"></div>
+                        <div id="custom-validation-feedback"></div>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-start-custom-level" disabled>Start Level</button>
+                    <button id="btn-back-to-level" class="btn-back">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <!-- Game Screen -->
+        <div id="screen-game" class="screen hidden">
+            <main id="game-container">
+                <div id="game-board-wrapper">
+                    <canvas id="gem-canvas" tabindex="0"></canvas>
+                    <canvas id="path-overlay"></canvas>
+                </div>
+            </main>
+            <footer id="controls-container">
+                <div id="actions-panel">
+                    <div class="mode-switch-wrapper">
+                        <span>Action Mode:</span>
+                        <div id="mode-switch-container">
+                            <button id="mode-wave-btn" class="mode-btn active">Send Ray</button>
+                            <button id="mode-query-btn" class="mode-btn">Query Cell</button>
+                        </div>
+                        <div id="query-counter">Queries: 0</div>
+                    </div>
+                    <div id="gem-toolbar-wrapper">
+                        <span>Available Gems: (drag on board)</span>
+                        <div id="gem-toolbar"></div>
+                    </div>
+                    <div id="color-palette-wrapper" hidden>
+                        <span>Paint Color:</span>
+                        <div id="color-palette" class="selector-grid"></div>
+                    </div>
+                    <div id="path-switch-wrapper" class="mode-switch-wrapper">
+                        <span>Reflection Path:</span>
+                        <div id="path-switch-container">
+                            <button id="path-show-btn" class="mode-btn active">Show</button>
+                            <button id="path-hide-btn" class="mode-btn">Hide</button>
+                        </div>
+                    </div>
+                    <div id="player-path-switch-wrapper" class="mode-switch-wrapper" hidden>
+                        <span title="Show how the selected ray would travel through your placed gems (F)">Current Light Path:</span>
+                        <div id="player-path-switch-container">
+                            <button id="player-path-show-btn" class="mode-btn">Show</button>
+                            <button id="player-path-hide-btn" class="mode-btn active">Hide</button>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        </div><!-- /#screens -->
+
+        <div id="action-buttons" hidden>
+            <button id="give-up-btn">Give Up</button>
+            <button id="check-solution-btn">Submit Solution</button>
+            <button id="finish-game-btn" hidden>Finish game</button>
+        </div>
+
+        <!-- Info Modal (rules + rating) -->
+        <div id="info-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>How to Play</h3>
+                <div id="info-modal-scroll">
+                    <div id="info-modal-methods"></div>
+                    <div id="info-modal-mixing"></div>
+                    <div id="info-modal-rating"></div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-close-info" class="btn-back">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logbook Modal -->
+        <div id="logbook-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>Logbook</h3>
+                <div id="logbook-modal-scroll">
+                    <p id="log-empty-msg">No entries yet.</p>
+                    <ul id="log-list"></ul>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-close-logbook" class="btn-back">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reset Confirm Modal -->
+        <div id="reset-confirm-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>Reset all games?</h3>
+                <p>All games currently in progress will be ended and cannot be resumed.</p>
+                <div class="menu-buttons">
+                    <button id="btn-confirm-reset">Reset</button>
+                    <button id="btn-cancel-reset" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- End / Result Modal -->
+        <div id="screen-end" class="screen hidden v-center">
+            <div class="end-content-container">
+                <h2 id="end-title" class="subtitle"></h2>
+                <h3 id="end-rating"></h3>
+                <p id="end-stats"></p>
+                <p id="end-retry-message"></p>
+                <div id="end-main-row">
+                    <div id="end-solution-wrapper">
+                        <p id="end-solution-label"></p>
+                        <canvas id="end-solution-canvas"></canvas>
+                        <div class="solution-download-row">
+                            <button id="btn-download-correct" class="solution-dl-btn">⬇ Download correct solution</button>
+                            <button id="btn-download-yours" class="solution-dl-btn" hidden>⬇ Download yours</button>
+                        </div>
+                    </div>
+                    <div id="end-rating-legend"></div>
+                </div>
+                <div id="end-share-section" hidden>
+                    <h4>Challenge a friend</h4>
+                    <p>You want a friend to play this level, or you wanna play it again later? Send this link or store it for later use.</p>
+                    <div class="game-sheet-field">
+                        <label for="end-share-url">Shareable URL</label>
+                        <div class="field-with-copy">
+                            <textarea id="end-share-url" class="share-url-textarea autosize" rows="1" readonly></textarea>
+                            <button id="btn-end-copy-url" class="copy-btn" type="button" aria-label="Copy URL" title="Copy URL">
+                                <svg class="icon" aria-hidden="true"><use href="#icon-copy"/></svg>
+                            </button>
+                            <button id="btn-end-share-via-app" class="copy-btn share-app-btn" type="button" aria-label="Share via app" title="Share via app" hidden>
+                                <svg class="icon" aria-hidden="true"><use href="#icon-share"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="game-sheet-field">
+                        <label for="end-share-game-id">Game ID</label>
+                        <div class="field-with-copy">
+                            <textarea id="end-share-game-id" class="share-url-textarea autosize" rows="1" readonly></textarea>
+                            <button id="btn-end-copy-game-id" class="copy-btn" type="button" aria-label="Copy game ID" title="Copy game ID">
+                                <svg class="icon" aria-hidden="true"><use href="#icon-copy"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-new-level">New Level</button>
+                    <button id="btn-menu" class="btn-back">Back to menu</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Sheet: Ray result entry modal -->
+        <div id="ray-result-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3 id="ray-result-title">Send Ray</h3>
+                <div class="game-sheet-field">
+                    <label>Exit emitter</label>
+                    <div id="ray-exit-buttons" class="exit-emitter-grid"></div>
+                </div>
+                <div class="game-sheet-field">
+                    <label>Color reported</label>
+                    <div id="ray-color-grid" class="color-pick-grid"></div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-ray-save">Save</button>
+                    <button id="btn-ray-delete" class="btn-back" hidden>Delete</button>
+                    <button id="btn-ray-cancel" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Sheet: Query result entry modal -->
+        <div id="query-result-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3 id="query-result-title">Query Cell</h3>
+                <div class="game-sheet-field">
+                    <label>Color reported</label>
+                    <div id="query-color-grid" class="color-pick-grid"></div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-query-save">Save</button>
+                    <button id="btn-query-delete" class="btn-back" hidden>Delete</button>
+                    <button id="btn-query-cancel" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Sheet: Add custom gem modal -->
+        <div id="add-gem-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>Add a custom gem</h3>
+                <div class="game-sheet-field">
+                    <label>Color</label>
+                    <div id="add-gem-color-selector" class="selector-grid"></div>
+                </div>
+                <div class="game-sheet-field">
+                    <label>Shape</label>
+                    <div id="add-gem-shape-selector" class="selector-grid"></div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-add-gem-save">Add</button>
+                    <button id="btn-add-gem-cancel" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share this board modal (opened from topbar) -->
+        <div id="share-board-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>Share this board</h3>
+                <p>Anyone who opens this link will play the exact same puzzle.</p>
+                <div class="game-sheet-field">
+                    <label for="share-board-url">Shareable URL</label>
+                    <div class="field-with-copy">
+                        <textarea id="share-board-url" class="share-url-textarea autosize" rows="1" readonly></textarea>
+                        <button id="btn-share-copy-url" class="copy-btn" type="button" aria-label="Copy URL" title="Copy URL">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-copy"/></svg>
+                        </button>
+                        <button id="btn-share-via-app" class="copy-btn share-app-btn" type="button" aria-label="Share via app" title="Share via app" hidden>
+                            <svg class="icon" aria-hidden="true"><use href="#icon-share"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="game-sheet-field">
+                    <label for="share-board-game-id">Game ID</label>
+                    <div class="field-with-copy">
+                        <textarea id="share-board-game-id" class="share-url-textarea autosize" rows="1" readonly></textarea>
+                        <button id="btn-share-copy-game-id" class="copy-btn" type="button" aria-label="Copy game ID" title="Copy game ID">
+                            <svg class="icon" aria-hidden="true"><use href="#icon-copy"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-share-close" class="btn-back">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Play against Friends: join modal -->
+        <div id="play-friends-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>Play against Friends</h3>
+                <p>Paste a game ID or shared URL to play the exact same board your friend played.</p>
+                <div class="game-sheet-field">
+                    <label for="play-friends-input">Game ID or URL</label>
+                    <div class="field-with-copy">
+                        <textarea id="play-friends-input" class="share-url-textarea autosize" rows="1" placeholder="Paste here…"></textarea>
+                        <button id="btn-play-friends-paste" class="copy-btn" type="button" aria-label="Paste from clipboard">Paste</button>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-play-friends-start">Start</button>
+                    <button id="btn-play-friends-cancel" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Sheet: Finish confirmation -->
+        <div id="finish-confirm-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>End this Game Sheet session?</h3>
+                <p>Your log will be discarded and cannot be resumed.</p>
+                <div class="menu-buttons">
+                    <button id="btn-confirm-finish">End Session</button>
+                    <button id="btn-cancel-finish" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Random Level Modal -->
+        <div id="random-level-modal" class="screen hidden v-center">
+            <div class="designer-content info-modal-content">
+                <h3>Random Level</h3>
+                <p>Always includes 1 red, 1 yellow, 1 blue gem with random shapes.</p>
+                <div class="steppers">
+                    <div class="stepper">
+                        <span>White</span>
+                        <div class="stepper-buttons">
+                            <button class="stepper-btn" data-rnd="WHITE" data-delta="-1">−</button>
+                            <span class="stepper-val" data-rnd-val="WHITE">1</span>
+                            <button class="stepper-btn" data-rnd="WHITE" data-delta="1">+</button>
+                        </div>
+                    </div>
+                    <div class="stepper">
+                        <span>Transparent</span>
+                        <div class="stepper-buttons">
+                            <button class="stepper-btn" data-rnd="TRANSPARENT" data-delta="-1">−</button>
+                            <span class="stepper-val" data-rnd-val="TRANSPARENT">1</span>
+                            <button class="stepper-btn" data-rnd="TRANSPARENT" data-delta="1">+</button>
+                        </div>
+                    </div>
+                    <div class="stepper">
+                        <span>Black</span>
+                        <div class="stepper-buttons">
+                            <button class="stepper-btn" data-rnd="BLACK" data-delta="-1">−</button>
+                            <span class="stepper-val" data-rnd-val="BLACK">1</span>
+                            <button class="stepper-btn" data-rnd="BLACK" data-delta="1">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-generate-random">Generate</button>
+                    <button id="btn-cancel-random" class="btn-back">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Shape Designer Modal -->
+        <div id="custom-shape-designer-modal" class="screen hidden v-center">
+            <div class="designer-content">
+                <h3>Design Custom Shape</h3>
+                <p>Click on the cells to change their type (Empty, Block, Diagonal). Design a gem within the 4x4 grid.</p>
+                <div id="designer-grid" class="designer-grid-container"></div>
+                <div id="designer-preview-wrapper">
+                    <h4>Preview (cropped size):</h4>
+                    <canvas id="designer-preview-canvas"></canvas>
+                </div>
+                <div class="menu-buttons">
+                    <button id="btn-finish-design">Finish Design</button>
+                    <button id="btn-cancel-design" class="btn-back">Back</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: order matters; classes/constants are referenced as globals -->
+    <script src="./src/grid.js"></script>
+    <script src="./src/constants.js"></script>
+    <script src="./src/state.js"></script>
+    <script src="./src/physics.js"></script>
+    <script src="./src/path-tracer.js"></script>
+    <script src="./src/ui-objects.js"></script>
+    <script src="./src/renderer.js"></script>
+    <script src="./src/input-handler.js"></script>
+    <script src="./src/custom-creator-ui.js"></script>
+    <script src="./src/game.js"></script>
+    <script src="./src/ui.js"></script>
+    <script src="./src/main.js"></script>
+</body>
+</html>
