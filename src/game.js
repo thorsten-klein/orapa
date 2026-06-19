@@ -800,6 +800,11 @@ class Game {
         const width = newGem.gridPattern[0].length;
         newGem.x = Math.max(0, Math.min(x, gameState.gridWidth - width));
         newGem.y = Math.max(0, Math.min(y, gameState.gridHeight - height));
+        // Fractional center of the bounding box. Rotations re-derive x/y from
+        // this anchor so 4 quarter-turns always cycle back to the same cell
+        // (Math.round on the running center drifts when w+h are mixed parity).
+        newGem.cx = newGem.x + width / 2;
+        newGem.cy = newGem.y + height / 2;
 
         gameState.playerGems.push(newGem);
         this._revalidateAllPlayerGems();
@@ -821,6 +826,8 @@ class Game {
             this._pushHistory();
             gem.x = clampedX;
             gem.y = clampedY;
+            gem.cx = gem.x + width / 2;
+            gem.cy = gem.y + height / 2;
 
             this._revalidateAllPlayerGems();
             this.updateSolutionButtonState();
@@ -844,19 +851,20 @@ class Game {
         const gem = gameState.playerGems.find(g => g.id === id);
         if (gem) {
             this._pushHistory();
-            const oldWidth = gem.gridPattern[0].length;
-            const oldHeight = gem.gridPattern.length;
-
-            const centerX = gem.x + oldWidth / 2;
-            const centerY = gem.y + oldHeight / 2;
+            // Lazy-init the rotation anchor for gems persisted before cx/cy existed.
+            if (gem.cx === undefined || gem.cy === undefined) {
+                gem.cx = gem.x + gem.gridPattern[0].length / 2;
+                gem.cy = gem.y + gem.gridPattern.length / 2;
+            }
 
             gem.rotation = (gem.rotation + 90) % 360;
             gem.gridPattern = rotateGridPattern(gem.gridPattern);
             const newWidth = gem.gridPattern[0].length;
             const newHeight = gem.gridPattern.length;
 
-            gem.x = Math.round(centerX - newWidth / 2);
-            gem.y = Math.round(centerY - newHeight / 2);
+            // Re-derive position from the fixed center anchor so 4 rotations cycle exactly.
+            gem.x = Math.round(gem.cx - newWidth / 2);
+            gem.y = Math.round(gem.cy - newHeight / 2);
 
             gem.x = Math.max(0, Math.min(gem.x, gameState.gridWidth - newWidth));
             gem.y = Math.max(0, Math.min(gem.y, gameState.gridHeight - newHeight));

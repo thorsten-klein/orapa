@@ -78,6 +78,70 @@ test.describe('game core', () => {
         await page.evaluate((i) => window.game.flipPlayerGem(i), id);
     });
 
+    test('rotatePlayerGem: lazy-inits cx/cy for gems persisted before the anchor existed', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        await page.evaluate(() => window.game.addPlayerGem('YELLOW', 2, 2));
+        // Simulate a resumed save where cx/cy weren't yet stored.
+        await page.evaluate(() => {
+            const g = gameState.playerGems[0];
+            delete g.cx; delete g.cy;
+        });
+        const before = await page.evaluate(() => gameState.playerGems[0].cx);
+        expect(before).toBeUndefined();
+        const id = await page.evaluate(() => gameState.playerGems[0].id);
+        await page.evaluate((i) => window.game.rotatePlayerGem(i), id);
+        const after = await page.evaluate(() => ({ cx: gameState.playerGems[0].cx, cy: gameState.playerGems[0].cy }));
+        expect(after.cx).toBeDefined();
+        expect(after.cy).toBeDefined();
+    });
+
+    test('rotation invariance: every gem size 1x1 .. 3x3 cycles cleanly (2 rots = same pos + 180°, 4 rots = identity)', async ({ page }) => {
+        // 10x10 board so a 3x3 gem placed near the middle never hits the bounding clamp.
+        await page.evaluate(() => window.game.start('NORMAL', { gridWidth: 10, gridHeight: 10 }));
+        await page.waitForSelector('#screen-game:not(.hidden)');
+
+        const results = await page.evaluate(() => {
+            const out = [];
+            const origGet = window.game.getGemDefinition.bind(window.game);
+            // Stub gem-definition lookup so synthetic sized gems resolve.
+            window.game.getGemDefinition = (n) => {
+                if (n && n.startsWith('TEST_')) return gameState.customGemDefinitions[n];
+                return origGet(n);
+            };
+
+            for (let h = 1; h <= 3; h++) {
+                for (let w = 1; w <= 3; w++) {
+                    const name = `TEST_${w}x${h}`;
+                    gameState.customGemDefinitions[name] = {
+                        name, color: '#f00', baseGems: ['RED'], originalColorKey: 'RED',
+                        gridPattern: Array.from({ length: h }, () => Array(w).fill(CellState.BLOCK)),
+                    };
+                    gameState.playerGems = [];
+                    window.game.addPlayerGem(name, 3, 3);
+                    const g = gameState.playerGems[0];
+                    const x0 = g.x, y0 = g.y;
+
+                    // 4 rotations → back to original position + rotation 0
+                    for (let i = 0; i < 4; i++) window.game.rotatePlayerGem(g.id);
+                    const after4 = { x: g.x, y: g.y, rotation: g.rotation };
+
+                    // 2 more rotations → same position + rotation 180
+                    for (let i = 0; i < 2; i++) window.game.rotatePlayerGem(g.id);
+                    const after6 = { x: g.x, y: g.y, rotation: g.rotation };
+
+                    out.push({ size: `${w}x${h}`, x0, y0, after4, after6 });
+                }
+            }
+            window.game.getGemDefinition = origGet;
+            return out;
+        });
+
+        for (const r of results) {
+            expect(r.after4, `${r.size}: 4 rotations should restore`).toEqual({ x: r.x0, y: r.y0, rotation: 0 });
+            expect(r.after6, `${r.size}: 2 rotations should keep position (just 180°)`).toEqual({ x: r.x0, y: r.y0, rotation: 180 });
+        }
+    });
+
     // --- Blocked cells + placement validity ------------------------------------
 
     test('toggleBlockedCell: gem covering target cell → no block', async ({ page }) => {
