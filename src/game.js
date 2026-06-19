@@ -1068,17 +1068,8 @@ class Game {
             return false;
         }
 
-        for (let r = 0; r < height; r++) {
-            for (let c = 0; c < width; c++) {
-                if (gridPattern[r][c] !== CellState.EMPTY) {
-                    const cellX = x + c;
-                    const cellY = y + r;
-                    if (gameState.blockedCells.some(bc => bc.x === cellX && bc.y === cellY)) {
-                        return false;
-                    }
-                }
-            }
-        }
+        // Blocked cells are a visual-only marker (the player's own "ruled out"
+        // hint) — they don't invalidate placement.
 
         for (const otherGem of allPlacedGems) {
             if (id && otherGem.id === id) continue;

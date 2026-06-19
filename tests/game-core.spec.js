@@ -160,10 +160,15 @@ test.describe('game core', () => {
         expect(blocked).toBe(1);
     });
 
-    test('_isPlacementValid: gem overlapping a blocked cell becomes invalid', async ({ page }) => {
+    test('placement: a gem covering an X-marked cell is still valid (X is visual only)', async ({ page }) => {
         await startLevel(page, 'NORMAL');
         await page.evaluate(() => window.game.toggleBlockedCell(3, 3));
         await page.evaluate(() => window.game.addPlayerGem('RED', 2, 3));
+        const placed = await page.evaluate(() => gameState.playerGems[0]);
+        // RED occupies (2,3),(3,3),(4,3) — overlaps the X at (3,3) but stays valid.
+        expect(placed.isValid).toBe(true);
+        const blockedCount = await page.evaluate(() => gameState.blockedCells.length);
+        expect(blockedCount).toBe(1);
     });
 
     test('_doGemsCollide: absorber-adjacent gem blocks placement', async ({ page }) => {
