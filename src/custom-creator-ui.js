@@ -51,6 +51,8 @@ class CustomCreatorUI {
         this.btnRandomLevel = document.getElementById('btn-random-level');
         this.btnGenerateRandom = document.getElementById('btn-generate-random');
         this.btnCancelRandom = document.getElementById('btn-cancel-random');
+        this.btnDefaultLevel = document.getElementById('btn-default-level');
+        this.btnDefaultLevel.addEventListener('click', () => this.loadDefaultHardSet());
         this._randomCounts = { WHITE: 1, TRANSPARENT: 1, BLACK: 1 };
         this._randomLimits = { WHITE: [1, 4], TRANSPARENT: [0, 4], BLACK: [0, 1] };
         this.btnRandomLevel.addEventListener('click', () => this.openRandomModal());
@@ -139,6 +141,23 @@ class CustomCreatorUI {
         this.updateCustomGemList();
         this.validateCustomSet();
         this.closeRandomModal();
+    }
+
+    loadDefaultHardSet() {
+        const newGems = [];
+        GEM_SETS[LEVELS.HARD].forEach((gemName) => {
+            const baseDef = GEMS[gemName];
+            const originalColorKey = (baseDef.special === 'absorbs') ? 'BLACK'
+                : (baseDef.baseGems.length === 0) ? 'TRANSPARENT'
+                : baseDef.baseGems[0];
+            newGems.push(Object.assign({}, baseDef, {
+                name: `CUSTOM_${gemName}_${Date.now()}_${newGems.length}`,
+                originalColorKey,
+            }));
+        });
+        this.state.gems = newGems;
+        this.updateCustomGemList();
+        this.validateCustomSet();
     }
 
     setup(initialDims) {

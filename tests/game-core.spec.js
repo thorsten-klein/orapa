@@ -206,10 +206,12 @@ test.describe('game core', () => {
         await page.evaluate(() => {
             window.alert = () => {};
             gameState.customGemSet = ['HUGE'];
+            // Make it a too-tall single-column gem: cheap isShapeFlippable cost,
+            // still fails the gridWidth/gridHeight check on every attempt.
             gameState.customGemDefinitions = {
                 HUGE: {
                     name: 'HUGE', color: '#fff', baseGems: ['WHITE'],
-                    gridPattern: Array.from({ length: 30 }, () => Array(30).fill(CellState.BLOCK)),
+                    gridPattern: Array.from({ length: 15 }, () => [CellState.BLOCK]),
                 },
             };
             window.game.start('CUSTOM', { gridWidth: 8, gridHeight: 10 });
