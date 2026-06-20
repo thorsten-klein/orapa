@@ -187,7 +187,10 @@ const GEMS = {
     },
     BLACK: {
         name: 'BLACK', color: COLORS.BLACK_GEM, baseGems: [], special: 'absorbs',
-        gridPattern: [[CellState.ABSORB, CellState.ABSORB]],
+        // Same footprint as SHAPE_SMALL_TRIANGLE — two corner-triangles forming a
+        // small "tent". The reflecting cell shapes are overridden by the gem-level
+        // `special: 'absorbs'` flag, which the path-tracer honors below.
+        gridPattern: [[CellState.TRIANGLE_BR, CellState.TRIANGLE_BL]],
     },
 };
 
