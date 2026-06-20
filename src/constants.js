@@ -37,6 +37,7 @@ const LEVELS = {
     MEDIUM: 'MEDIUM',
     MEDIUM_PLUS: 'MEDIUM_PLUS',
     HARD: 'HARD',
+    EXPERIENCED: 'EXPERIENCED',
     EXTREME: 'EXTREME',
     CUSTOM: 'CUSTOM',
     GAME_SHEET: 'GAME_SHEET',
@@ -126,6 +127,7 @@ const LEVEL_LABELS = {
     [LEVELS.MEDIUM]:   'Medium',
     [LEVELS.MEDIUM_PLUS]: 'Medium +',
     [LEVELS.HARD]:     'Hard',
+    [LEVELS.EXPERIENCED]: 'Experienced',
     [LEVELS.EXTREME]:  'Extreme',
     [LEVELS.CUSTOM]:   'Play a Custom Level',
     [LEVELS.GAME_SHEET]: 'Use as Game Sheet',
@@ -138,6 +140,7 @@ const LEVEL_DESCRIPTIONS = {
     [LEVELS.MEDIUM]:   'A new challenge. A transparent prism gem deflects light without coloring it.',
     [LEVELS.MEDIUM_PLUS]: 'Same as Medium, but with a black, light-absorbing gem instead of the transparent prism.',
     [LEVELS.HARD]:     'Expert mode. In addition to the transparent gem, a black, light-absorbing gem comes into play.',
+    [LEVELS.EXPERIENCED]: 'All Hard-mode gems plus a light-blue block that tints any ray passing through it.',
     [LEVELS.EXTREME]:  'Master mode. Same as Hard, but the gem shapes are hidden — you must draw the cells yourself.',
     [LEVELS.CUSTOM]:   'Choose your own gems and create a new challenge.',
     [LEVELS.GAME_SHEET]: 'Digital Score sheet for the physical board game — use the logbook and digital visualization.',
@@ -192,6 +195,10 @@ const GEMS = {
         // `special: 'absorbs'` flag, which the path-tracer honors below.
         gridPattern: [[CellState.TRIANGLE_BR, CellState.TRIANGLE_BL]],
     },
+    LIGHT_BLUE_BLOCK: {
+        name: 'LIGHT_BLUE_BLOCK', color: COLORS.SKY_BLUE, baseGems: ['BLUE', 'WHITE'],
+        gridPattern: [[CellState.BLOCK, CellState.BLOCK]],
+    },
 };
 
 const CUSTOM_SHAPES = {
@@ -200,7 +207,7 @@ const CUSTOM_SHAPES = {
     SHAPE_BIG_TRIANGLE:   { name: 'Large Triangle',     gridPattern: GEMS.BLUE.gridPattern },
     SHAPE_DIAMOND:        { name: 'Diamond',            gridPattern: GEMS.WHITE_DIAMOND.gridPattern },
     SHAPE_SMALL_TRIANGLE: { name: 'Small Triangle',     gridPattern: GEMS.TRANSPARENT.gridPattern },
-    SHAPE_ABSORBER:       { name: 'Absorber',           gridPattern: GEMS.BLACK.gridPattern },
+    SHAPE_BLOCK:          { name: 'Block',              gridPattern: GEMS.LIGHT_BLUE_BLOCK.gridPattern },
     SHAPE_L:              { name: 'L-Shape',            gridPattern: [[CellState.TRIANGLE_BR, CellState.TRIANGLE_BL], [CellState.BLOCK, CellState.TRIANGLE_TL]] },
     SHAPE_T:              { name: 'T-Shape',            gridPattern: [[CellState.TRIANGLE_BR, CellState.BLOCK, CellState.TRIANGLE_BL], [CellState.TRIANGLE_TR, CellState.BLOCK, CellState.TRIANGLE_TL]] },
     SHAPE_SQUARE:         { name: 'Square',             gridPattern: [[CellState.TRIANGLE_BR, CellState.BLOCK], [CellState.BLOCK, CellState.TRIANGLE_TL]] },
@@ -224,6 +231,7 @@ const GEM_SETS = {
     [LEVELS.MEDIUM]: ['YELLOW', 'RED', 'BLUE', 'WHITE_DIAMOND', 'WHITE_TRIANGLE', 'TRANSPARENT'],
     [LEVELS.MEDIUM_PLUS]: ['YELLOW', 'RED', 'BLUE', 'WHITE_DIAMOND', 'WHITE_TRIANGLE', 'BLACK'],
     [LEVELS.HARD]: ['YELLOW', 'RED', 'BLUE', 'WHITE_DIAMOND', 'WHITE_TRIANGLE', 'TRANSPARENT', 'BLACK'],
+    [LEVELS.EXPERIENCED]: ['YELLOW', 'RED', 'BLUE', 'WHITE_DIAMOND', 'WHITE_TRIANGLE', 'TRANSPARENT', 'BLACK', 'LIGHT_BLUE_BLOCK'],
     [LEVELS.EXTREME]: ['YELLOW', 'RED', 'BLUE', 'WHITE_DIAMOND', 'WHITE_TRIANGLE', 'TRANSPARENT', 'BLACK'],
     [LEVELS.GAME_SHEET]: ['YELLOW', 'RED', 'BLUE', 'WHITE_DIAMOND', 'WHITE_TRIANGLE', 'TRANSPARENT', 'BLACK'],
 };
@@ -286,6 +294,13 @@ const RATINGS = {
         { limit: 18,       text: RATING_TEXTS.hard[1] },
         { limit: 21,       text: RATING_TEXTS.hard[2] },
         { limit: 25,       text: RATING_TEXTS.hard[3] },
+        { limit: Infinity, text: RATING_TEXTS.hard[4] },
+    ],
+    [LEVELS.EXPERIENCED]: [
+        { limit: 16,       text: RATING_TEXTS.hard[0] },
+        { limit: 20,       text: RATING_TEXTS.hard[1] },
+        { limit: 24,       text: RATING_TEXTS.hard[2] },
+        { limit: 30,       text: RATING_TEXTS.hard[3] },
         { limit: Infinity, text: RATING_TEXTS.hard[4] },
     ],
     [LEVELS.EXTREME]: [

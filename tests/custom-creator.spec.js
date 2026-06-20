@@ -44,7 +44,7 @@ test.describe('custom creator', () => {
 
         // Black absorber
         await page.click('#custom-color-selector .color-choice[data-color-key="BLACK"]');
-        await page.click('#custom-shape-selector .shape-choice[data-shape-key="SHAPE_ABSORBER"]');
+        await page.click('#custom-shape-selector .shape-choice[data-shape-key="SHAPE_SMALL_TRIANGLE"]');
         await page.click('#btn-add-custom-gem');
 
         // Alert branch when nothing selected

@@ -262,7 +262,7 @@ test.describe('GAME_SHEET level', () => {
         // Add a second gem so we have something to remove
         await page.click('.toolbar-gem.toolbar-gem-add');
         await page.click('#add-gem-color-selector .color-choice[data-color-key="BLACK"]');
-        await page.click('#add-gem-shape-selector .shape-choice[data-shape-key="SHAPE_ABSORBER"]');
+        await page.click('#add-gem-shape-selector .shape-choice[data-shape-key="SHAPE_SMALL_TRIANGLE"]');
         await page.click('#btn-add-gem-save');
 
         // Remove via the × button

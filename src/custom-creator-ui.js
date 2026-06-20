@@ -108,7 +108,7 @@ class CustomCreatorUI {
 
     generateRandomLevel() {
         // Shapes available to randomize (skip CUSTOM_DESIGN — needs hand-drawing)
-        const shapeKeys = Object.keys(CUSTOM_SHAPES).filter(k => k !== 'SHAPE_CUSTOM_DESIGN' && k !== 'SHAPE_ABSORBER');
+        const shapeKeys = Object.keys(CUSTOM_SHAPES).filter(k => k !== 'SHAPE_CUSTOM_DESIGN');
         const pickShape = () => CUSTOM_SHAPES[shapeKeys[Math.floor(Math.random() * shapeKeys.length)]];
 
         const newGems = [];
@@ -135,7 +135,7 @@ class CustomCreatorUI {
         addGem('BLUE', pickShape());
         for (let i = 0; i < this._randomCounts.WHITE; i++) addGem('WHITE', pickShape());
         for (let i = 0; i < this._randomCounts.TRANSPARENT; i++) addGem('TRANSPARENT', pickShape());
-        for (let i = 0; i < this._randomCounts.BLACK; i++) addGem('BLACK', CUSTOM_SHAPES.SHAPE_ABSORBER);
+        for (let i = 0; i < this._randomCounts.BLACK; i++) addGem('BLACK', CUSTOM_SHAPES.SHAPE_SMALL_TRIANGLE);
 
         this.state.gems = newGems;
         this.updateCustomGemList();
