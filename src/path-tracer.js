@@ -73,15 +73,17 @@ function tracePath(grid, gemMap, emitterId, game) {
 
         const gemKey = `${currentPos.y},${currentPos.x}`;
         const hitGem = gemMap.get(gemKey);
+        const hitGemDef = hitGem ? game.getGemDefinition(hitGem.name) : null;
         if (hitGem && !hitGems.has(hitGem.id)) {
             hitGems.add(hitGem.id);
-            const gemDef = game.getGemDefinition(hitGem.name);
-            if (gemDef && gemDef.baseGems) {
-                gemDef.baseGems.forEach(c => hitColors.add(c));
+            if (hitGemDef && hitGemDef.baseGems) {
+                hitGemDef.baseGems.forEach(c => hitColors.add(c));
             }
         }
 
-        if (cellState === CellState.ABSORB) {
+        // Absorb on an ABSORB cell, or on any cell belonging to a gem flagged
+        // as absorbing (e.g. the standard BLACK gem whose cells are triangles).
+        if (cellState === CellState.ABSORB || (hitGemDef && hitGemDef.special === 'absorbs')) {
             return { exitId: 'Absorbed', colors: [], path, absorbed: true };
         }
 

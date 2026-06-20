@@ -44,7 +44,7 @@ test.describe('custom creator', () => {
 
         // Black absorber
         await page.click('#custom-color-selector .color-choice[data-color-key="BLACK"]');
-        await page.click('#custom-shape-selector .shape-choice[data-shape-key="SHAPE_ABSORBER"]');
+        await page.click('#custom-shape-selector .shape-choice[data-shape-key="SHAPE_SMALL_TRIANGLE"]');
         await page.click('#btn-add-custom-gem');
 
         // Alert branch when nothing selected
@@ -159,6 +159,24 @@ test.describe('custom creator', () => {
     test('back to level select from custom creator', async ({ page }) => {
         await page.click('#btn-back-to-level');
         await expect(page.locator('#screen-level')).not.toHaveClass(/hidden/);
+    });
+
+    test('default Hard set: btn-default-level populates the gem list with Hard\'s gems and starts the level', async ({ page }) => {
+        await page.click('#btn-default-level');
+        const colorCounts = await page.evaluate(() => {
+            const counts = {};
+            for (const g of window.game.ui.customCreatorUI.state.gems) {
+                counts[g.originalColorKey] = (counts[g.originalColorKey] || 0) + 1;
+            }
+            return counts;
+        });
+        // Hard set = YELLOW, RED, BLUE, WHITE_DIAMOND, WHITE_TRIANGLE, TRANSPARENT, BLACK
+        expect(colorCounts).toEqual({ RED: 1, YELLOW: 1, BLUE: 1, WHITE: 2, TRANSPARENT: 1, BLACK: 1 });
+
+        // Set should validate cleanly and Start Level should be enabled.
+        await expect(page.locator('#custom-validation-feedback')).toContainText('valid');
+        await page.click('#btn-start-custom-level');
+        await page.waitForSelector('#screen-game:not(.hidden)');
     });
 
     test('random generator: default BLACK count = 1 produces an absorber gem', async ({ page }) => {

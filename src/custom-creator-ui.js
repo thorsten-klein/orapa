@@ -51,6 +51,8 @@ class CustomCreatorUI {
         this.btnRandomLevel = document.getElementById('btn-random-level');
         this.btnGenerateRandom = document.getElementById('btn-generate-random');
         this.btnCancelRandom = document.getElementById('btn-cancel-random');
+        this.btnDefaultLevel = document.getElementById('btn-default-level');
+        this.btnDefaultLevel.addEventListener('click', () => this.loadDefaultHardSet());
         this._randomCounts = { WHITE: 1, TRANSPARENT: 1, BLACK: 1 };
         this._randomLimits = { WHITE: [1, 4], TRANSPARENT: [0, 4], BLACK: [0, 1] };
         this.btnRandomLevel.addEventListener('click', () => this.openRandomModal());
@@ -106,7 +108,7 @@ class CustomCreatorUI {
 
     generateRandomLevel() {
         // Shapes available to randomize (skip CUSTOM_DESIGN — needs hand-drawing)
-        const shapeKeys = Object.keys(CUSTOM_SHAPES).filter(k => k !== 'SHAPE_CUSTOM_DESIGN' && k !== 'SHAPE_ABSORBER');
+        const shapeKeys = Object.keys(CUSTOM_SHAPES).filter(k => k !== 'SHAPE_CUSTOM_DESIGN');
         const pickShape = () => CUSTOM_SHAPES[shapeKeys[Math.floor(Math.random() * shapeKeys.length)]];
 
         const newGems = [];
@@ -133,12 +135,29 @@ class CustomCreatorUI {
         addGem('BLUE', pickShape());
         for (let i = 0; i < this._randomCounts.WHITE; i++) addGem('WHITE', pickShape());
         for (let i = 0; i < this._randomCounts.TRANSPARENT; i++) addGem('TRANSPARENT', pickShape());
-        for (let i = 0; i < this._randomCounts.BLACK; i++) addGem('BLACK', CUSTOM_SHAPES.SHAPE_ABSORBER);
+        for (let i = 0; i < this._randomCounts.BLACK; i++) addGem('BLACK', CUSTOM_SHAPES.SHAPE_SMALL_TRIANGLE);
 
         this.state.gems = newGems;
         this.updateCustomGemList();
         this.validateCustomSet();
         this.closeRandomModal();
+    }
+
+    loadDefaultHardSet() {
+        const newGems = [];
+        GEM_SETS[LEVELS.HARD].forEach((gemName) => {
+            const baseDef = GEMS[gemName];
+            const originalColorKey = (baseDef.special === 'absorbs') ? 'BLACK'
+                : (baseDef.baseGems.length === 0) ? 'TRANSPARENT'
+                : baseDef.baseGems[0];
+            newGems.push(Object.assign({}, baseDef, {
+                name: `CUSTOM_${gemName}_${Date.now()}_${newGems.length}`,
+                originalColorKey,
+            }));
+        });
+        this.state.gems = newGems;
+        this.updateCustomGemList();
+        this.validateCustomSet();
     }
 
     setup(initialDims) {
