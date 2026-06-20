@@ -524,7 +524,7 @@ class UI {
         addGroup('Training', [trainingBtn]);
 
         // --- Difficulties ---
-        const diffBtns = [LEVELS.NORMAL, LEVELS.MEDIUM, LEVELS.HARD, LEVELS.EXTREME].map(lvl =>
+        const diffBtns = [LEVELS.NORMAL, LEVELS.MEDIUM, LEVELS.MEDIUM_PLUS, LEVELS.HARD, LEVELS.EXTREME].map(lvl =>
             makeLevelBtn(lvl, () => this.game.start(lvl, this._dimsForOrientation()))
         );
         addGroup('Difficulties', diffBtns);
