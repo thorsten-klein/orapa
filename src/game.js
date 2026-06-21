@@ -891,12 +891,13 @@ class Game {
         return this._isPlacementValid(gemToTest, gameState.playerGems);
     }
 
-    toggleBlockedCell(x, y) {
+    toggleBlockedCell(x, y, opts) {
         if (!this._inBounds(x, y)) return;
+        const skipHistory = opts && opts.skipHistory;
 
         const index = gameState.blockedCells.findIndex(c => c.x === x && c.y === y);
         if (index > -1) {
-            this._pushHistory();
+            if (!skipHistory) this._pushHistory();
             gameState.blockedCells.splice(index, 1);
         } else {
             const isOccupied = gameState.playerGems.some(gem => {
@@ -910,12 +911,16 @@ class Game {
                 return false;
             });
             if (isOccupied) return;
-            this._pushHistory();
+            if (!skipHistory) this._pushHistory();
             gameState.blockedCells.push({ x, y });
         }
         this._revalidateAllPlayerGems();
         this.ui.redrawAll();
     }
+
+    // Public history snapshot — used by the input handler to batch a multi-cell
+    // swipe-to-block stroke into a single undo step.
+    pushHistory() { this._pushHistory(); }
 
     setDrawColor(colorKey) {
         gameState.drawSelectedColor = (gameState.drawSelectedColor === colorKey) ? null : colorKey;
