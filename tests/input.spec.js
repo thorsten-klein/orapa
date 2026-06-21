@@ -130,6 +130,91 @@ test.describe('input handler', () => {
         await page.mouse.click(2, 2);
     });
 
+    test('swipe over empty cells paints X marks on all visited cells (single undo)', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        const c0 = await canvasCenterForCell(page, 1, 1);
+        const c1 = await canvasCenterForCell(page, 2, 1);
+        const c2 = await canvasCenterForCell(page, 3, 1);
+
+        await page.mouse.move(c0.cx, c0.cy);
+        await page.mouse.down();
+        await page.mouse.move(c0.cx + 20, c0.cy);  // cross threshold (paint start cell)
+        await page.mouse.move(c1.cx, c1.cy);
+        await page.mouse.move(c2.cx, c2.cy);
+        await page.mouse.up();
+
+        const blocked = await page.evaluate(() => gameState.blockedCells.map(c => `${c.x},${c.y}`).sort());
+        expect(blocked).toEqual(['1,1', '2,1', '3,1']);
+
+        // The whole stroke is one undo step.
+        await page.evaluate(() => window.game.undo());
+        const afterUndo = await page.evaluate(() => gameState.blockedCells.length);
+        expect(afterUndo).toBe(0);
+    });
+
+    test('swipe starting on an already-X cell un-marks all visited X cells', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        // Pre-mark three cells via direct API
+        await page.evaluate(() => {
+            window.game.toggleBlockedCell(1, 1);
+            window.game.toggleBlockedCell(2, 1);
+            window.game.toggleBlockedCell(3, 1);
+        });
+        const c0 = await canvasCenterForCell(page, 1, 1);
+        const c1 = await canvasCenterForCell(page, 2, 1);
+        const c2 = await canvasCenterForCell(page, 3, 1);
+
+        await page.mouse.move(c0.cx, c0.cy);
+        await page.mouse.down();
+        await page.mouse.move(c0.cx + 20, c0.cy);
+        await page.mouse.move(c1.cx, c1.cy);
+        await page.mouse.move(c2.cx, c2.cy);
+        await page.mouse.up();
+
+        const blocked = await page.evaluate(() => gameState.blockedCells.length);
+        expect(blocked).toBe(0);
+    });
+
+    test('fast swipe (sparse pointermove samples) still paints every cell along the line', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        // Pre-compute centers for cells (0,1) through (5,1). With only TWO move
+        // samples (start → far end), naive paint would mark just 2 cells; with
+        // line interpolation we get all 6.
+        const c0 = await canvasCenterForCell(page, 0, 1);
+        const c5 = await canvasCenterForCell(page, 5, 1);
+
+        await page.mouse.move(c0.cx, c0.cy);
+        await page.mouse.down();
+        await page.mouse.move(c0.cx + 20, c0.cy);  // cross threshold (single nudge)
+        await page.mouse.move(c5.cx, c5.cy);       // big jump → 5 cells away
+        await page.mouse.up();
+
+        const blocked = await page.evaluate(() => gameState.blockedCells.map(c => `${c.x},${c.y}`).sort());
+        expect(blocked).toEqual(['0,1', '1,1', '2,1', '3,1', '4,1', '5,1']);
+    });
+
+    test('swipe over a cell occupied by a gem leaves that cell un-marked (others get X)', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        // Place YELLOW at (2,1) so cell (2,1) is occupied
+        await page.evaluate(() => window.game.addPlayerGem('YELLOW', 2, 1));
+        const c0 = await canvasCenterForCell(page, 1, 1);
+        const c1 = await canvasCenterForCell(page, 2, 1);  // occupied
+        const c2 = await canvasCenterForCell(page, 4, 1);  // beyond YELLOW
+
+        await page.mouse.move(c0.cx, c0.cy);
+        await page.mouse.down();
+        await page.mouse.move(c0.cx + 20, c0.cy);
+        await page.mouse.move(c1.cx, c1.cy);
+        await page.mouse.move(c2.cx, c2.cy);
+        await page.mouse.up();
+
+        const blocked = await page.evaluate(() => gameState.blockedCells.map(c => `${c.x},${c.y}`).sort());
+        // The cell under the gem is skipped, the others are blocked.
+        expect(blocked).toContain('1,1');
+        expect(blocked).toContain('4,1');
+        expect(blocked).not.toContain('2,1');
+    });
+
     test('right-click on canvas: button !== 0 early return', async ({ page }) => {
         await startLevel(page, 'NORMAL');
         const c = await canvasCenterForCell(page, 2, 2);
@@ -211,6 +296,18 @@ test.describe('input handler', () => {
     });
 
     test('drag started on empty cell with no item dropped → potentialDragItem null', async ({ page }) => {
+        const c = await canvasCenterForCell(page, 0, 0);
+        await page.mouse.move(c.cx, c.cy);
+        await page.mouse.down();
+        await page.mouse.move(c.cx + 30, c.cy + 30);
+        await page.mouse.up();
+    });
+
+    test('drag in Extreme mode (no paint stroke set up) cancels the press cleanly', async ({ page }) => {
+        // Extreme mode skips the swipe-to-paint-X path entirely; the threshold
+        // cross with no gem and no paint info must null dragStartInfo silently.
+        await page.evaluate(() => window.game.start('EXTREME'));
+        await page.waitForSelector('#screen-game:not(.hidden)');
         const c = await canvasCenterForCell(page, 0, 0);
         await page.mouse.move(c.cx, c.cy);
         await page.mouse.down();

@@ -20,6 +20,11 @@ class InputHandler {
         this.longPressTimeout = null;
         this.longPressTriggered = false;
 
+        // Swipe-to-paint-X state: set when a press starts on an empty grid cell
+        // in WAVE mode and tracks which cells the pointer has visited so each
+        // is painted exactly once with the same blocked-state per stroke.
+        this.blockPaintInfo = null;
+
         this.bindEvents();
     }
 
@@ -162,6 +167,29 @@ class InputHandler {
             }
         }
 
+        // Swipe-to-paint-X: when the press starts on an empty grid cell in WAVE
+        // mode (no gem, no toolbar drag, no emitter) we set up paint info.
+        // Actual painting waits for the drag threshold so a tap still toggles
+        // a single cell via handleCanvasTap.
+        if (isOverCanvas && !potentialDragItem && this.renderer &&
+            gameState.interactionMode === InteractionMode.WAVE &&
+            !this.game.isExtreme() && !this.game.isGameSheet()) {
+            const canvasRect = this.gemCanvas.getBoundingClientRect();
+            const x = clientX - canvasRect.left;
+            const y = clientY - canvasRect.top;
+            const onEmitter = this.renderer.emitters.find(em => em.isInside(x, y));
+            const grid = this.renderer._canvasToGridCoords(x, y);
+            if (!onEmitter && this.game._inBounds(grid.x, grid.y)) {
+                const isBlocked = gameState.blockedCells.some(c => c.x === grid.x && c.y === grid.y);
+                this.blockPaintInfo = {
+                    paintMode: !isBlocked,      // first cell flips, rest follow
+                    startGrid: grid,
+                    visited: new Set(),
+                    painted: false,
+                };
+            }
+        }
+
         if (isOverCanvas || toolbarGemEl) {
             this.dragStartInfo = { item: potentialDragItem, startX: clientX, startY: clientY };
         }
@@ -189,7 +217,8 @@ class InputHandler {
                     this.draggedItemInfo = this.dragStartInfo.item;
                     this.gemCanvas.style.cursor = 'grabbing';
                     if (this.draggedItemInfo.element) this.draggedItemInfo.element.classList.add('dragging');
-                } else {
+                } else if (!this.blockPaintInfo) {
+                    // No gem and no active paint stroke → fully cancel the press.
                     this.dragStartInfo = null;
                 }
             }
@@ -209,6 +238,26 @@ class InputHandler {
                 this.lastValidDropTarget.y = gridY;
 
                 this.ui.redrawAll();
+            } else if (this.blockPaintInfo && Math.sqrt(dx * dx + dy * dy) > 10) {
+                // Swipe-to-paint-X: snapshot history once on the first crossing
+                // (also paint the start cell), then paint every cell along the
+                // line from the previous sample to the current one — fast moves
+                // produce sparse pointermove samples, so we must interpolate.
+                if (!this.blockPaintInfo.painted) {
+                    this.blockPaintInfo.painted = true;
+                    this.game.pushHistory();
+                    const s = this.blockPaintInfo.startGrid;
+                    this._paintBlockCell(s.x, s.y);
+                    this.blockPaintInfo.lastGrid = { x: s.x, y: s.y };
+                }
+                const canvasRect = this.gemCanvas.getBoundingClientRect();
+                const grid = this.renderer._canvasToGridCoords(
+                    clientX - canvasRect.left, clientY - canvasRect.top);
+                const last = this.blockPaintInfo.lastGrid;
+                for (const [x, y] of this._lineCells(last.x, last.y, grid.x, grid.y)) {
+                    if (this.game._inBounds(x, y)) this._paintBlockCell(x, y);
+                }
+                this.blockPaintInfo.lastGrid = { x: grid.x, y: grid.y };
             }
         } else {
             const isOverCanvas = e.target.closest && e.target.closest('#gem-canvas');
@@ -222,6 +271,10 @@ class InputHandler {
 
     handlePointerUp(e) {
         if (this.longPressTimeout) clearTimeout(this.longPressTimeout);
+        // End any in-progress swipe-to-paint stroke. If we actually painted,
+        // skip the tap fallback so the start cell doesn't get re-toggled.
+        const wasPainting = this.blockPaintInfo && this.blockPaintInfo.painted;
+        this.blockPaintInfo = null;
         if (this.longPressTriggered) {
             this.longPressTriggered = false;
             this.dragStartInfo = null;
@@ -253,7 +306,7 @@ class InputHandler {
             } else if (this.draggedItemInfo.from === 'board' && this.draggedItemInfo.id) {
                 this.game.removePlayerGem(this.draggedItemInfo.id);
             }
-        } else if (this.dragStartInfo) {
+        } else if (this.dragStartInfo && !wasPainting) {
             const target = e.target;
             if (target.closest && target.closest('#gem-canvas')) {
                 this.handleCanvasTap(coords.clientX, coords.clientY);
@@ -377,6 +430,36 @@ class InputHandler {
             }
         }
         return null;
+    }
+
+    // Bresenham line — yields every integer grid cell along (x0,y0) → (x1,y1)
+    // INCLUDING the endpoint so fast pointer moves don't skip cells.
+    * _lineCells(x0, y0, x1, y1) {
+        const dx = Math.abs(x1 - x0);
+        const dy = -Math.abs(y1 - y0);
+        const sx = x0 < x1 ? 1 : -1;
+        const sy = y0 < y1 ? 1 : -1;
+        let err = dx + dy;
+        let x = x0, y = y0;
+        while (true) {
+            yield [x, y];
+            if (x === x1 && y === y1) return;
+            const e2 = 2 * err;
+            if (e2 >= dy) { err += dy; x += sx; }
+            if (e2 <= dx) { err += dx; y += sy; }
+        }
+    }
+
+    // Paint one cell during a swipe-to-paint-X stroke. No-op if the cell was
+    // already visited in this stroke or already at the target paintMode.
+    _paintBlockCell(x, y) {
+        const key = `${y},${x}`;
+        if (this.blockPaintInfo.visited.has(key)) return;
+        this.blockPaintInfo.visited.add(key);
+        const isBlocked = gameState.blockedCells.some(c => c.x === x && c.y === y);
+        if (isBlocked !== this.blockPaintInfo.paintMode) {
+            this.game.toggleBlockedCell(x, y, { skipHistory: true });
+        }
     }
 
     getPlayerGemMap() {

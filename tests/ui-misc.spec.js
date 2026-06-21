@@ -121,6 +121,50 @@ test.describe('ui misc', () => {
         await expect(page.locator('#end-rating-legend')).toBeVisible();
     });
 
+    test('areGemSetsIdentical: 180°-rotated absorber is treated as identical (orientation undetectable)', async ({ page }) => {
+        await page.evaluate(() => window.game.start('HARD'));
+        await page.waitForSelector('#screen-game:not(.hidden)');
+        const r = await page.evaluate(() => {
+            const ui = window.game.ui;
+            const secret = [{
+                name: 'BLACK', x: 3, y: 3,
+                gridPattern: [[CellState.TRIANGLE_BR, CellState.TRIANGLE_BL]],   // rotation 0
+            }];
+            const player180 = [{
+                name: 'BLACK', x: 3, y: 3,
+                gridPattern: [[CellState.TRIANGLE_TR, CellState.TRIANGLE_TL]],   // rotation 180 — flipped tent
+            }];
+            const player90 = [{
+                name: 'BLACK', x: 3, y: 3,
+                gridPattern: [[CellState.TRIANGLE_BL], [CellState.TRIANGLE_TL]], // rotation 90 — different bbox
+            }];
+            return {
+                rot180: ui.areGemSetsIdentical(secret, player180),  // same bbox → identical
+                rot90:  ui.areGemSetsIdentical(secret, player90),   // different bbox → not identical
+            };
+        });
+        expect(r.rot180).toBe(true);
+        expect(r.rot90).toBe(false);
+    });
+
+    test('areGemSetsIdentical: non-absorber rotation differences are still distinguished', async ({ page }) => {
+        await page.evaluate(() => window.game.start('MEDIUM'));
+        await page.waitForSelector('#screen-game:not(.hidden)');
+        const same = await page.evaluate(() => {
+            const ui = window.game.ui;
+            const secret = [{
+                name: 'TRANSPARENT', x: 3, y: 3,
+                gridPattern: [[CellState.TRIANGLE_BR, CellState.TRIANGLE_BL]],
+            }];
+            const player = [{
+                name: 'TRANSPARENT', x: 3, y: 3,
+                gridPattern: [[CellState.TRIANGLE_TR, CellState.TRIANGLE_TL]],
+            }];
+            return ui.areGemSetsIdentical(secret, player);
+        });
+        expect(same).toBe(false);
+    });
+
     test('end screen "Alternative solution" branch when player differs from secret', async ({ page }) => {
         await startLevel(page, 'NORMAL');
         await page.evaluate(() => {
