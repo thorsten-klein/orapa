@@ -772,7 +772,19 @@ class UI {
     areGemSetsIdentical(gemsA, gemsB) {
         if (gemsA.length !== gemsB.length) return false;
 
-        const gemToKey = (g) => `${g.name},${g.x},${g.y},${JSON.stringify(g.gridPattern)}`;
+        // Absorbing gems are orientation-indistinguishable to the player (light
+        // absorbs the same regardless of how the triangle is rotated), so we
+        // compare them by name + position + bounding-box dimensions only —
+        // skipping the cell pattern means 0°↔180° and 90°↔270° rotations match.
+        const gemToKey = (g) => {
+            const def = this.getGemDefinition(g.name);
+            if (def && def.special === 'absorbs') {
+                const w = g.gridPattern[0].length;
+                const h = g.gridPattern.length;
+                return `${g.name},${g.x},${g.y},${w}x${h}`;
+            }
+            return `${g.name},${g.x},${g.y},${JSON.stringify(g.gridPattern)}`;
+        };
         const keysA = new Set(gemsA.map(gemToKey));
         const keysB = new Set(gemsB.map(gemToKey));
 
