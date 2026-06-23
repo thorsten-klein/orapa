@@ -1011,10 +1011,6 @@ class Game {
         const heightB = gemB.gridPattern.length;
         const widthB = gemB.gridPattern[0].length;
 
-        const gemDefA = this.getGemDefinition(gemA.name);
-        const gemDefB = this.getGemDefinition(gemB.name);
-        const isAbsorberInvolved = (gemDefA && gemDefA.special === 'absorbs') || (gemDefB && gemDefB.special === 'absorbs');
-
         for (let rA = 0; rA < heightA; rA++) {
             for (let cA = 0; cA < widthA; cA++) {
                 const cellAState = gemA.gridPattern[rA][cA];
@@ -1034,27 +1030,21 @@ class Game {
                         const dx = Math.abs(worldXA - worldXB);
                         const dy = Math.abs(worldYA - worldYB);
 
-                        if (isAbsorberInvolved) {
-                            if (dx <= 1 && dy <= 1) {
-                                return true;
-                            }
-                        } else {
-                            if (dx === 0 && dy === 0) {
-                                return true;
-                            }
-                            if (dx + dy === 1) {
-                                const edgesA = _cellEdges[cellAState];
-                                const edgesB = _cellEdges[cellBState];
+                        if (dx === 0 && dy === 0) {
+                            return true;
+                        }
+                        if (dx + dy === 1) {
+                            const edgesA = _cellEdges[cellAState];
+                            const edgesB = _cellEdges[cellBState];
 
-                                if (worldXA < worldXB) {
-                                    if (edgesA[1] && edgesB[3]) return true;
-                                } else if (worldXA > worldXB) {
-                                    if (edgesA[3] && edgesB[1]) return true;
-                                } else if (worldYA < worldYB) {
-                                    if (edgesA[2] && edgesB[0]) return true;
-                                } else {
-                                    if (edgesA[0] && edgesB[2]) return true;
-                                }
+                            if (worldXA < worldXB) {
+                                if (edgesA[1] && edgesB[3]) return true;
+                            } else if (worldXA > worldXB) {
+                                if (edgesA[3] && edgesB[1]) return true;
+                            } else if (worldYA < worldYB) {
+                                if (edgesA[2] && edgesB[0]) return true;
+                            } else {
+                                if (edgesA[0] && edgesB[2]) return true;
                             }
                         }
                     }

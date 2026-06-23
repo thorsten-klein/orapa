@@ -171,10 +171,31 @@ test.describe('game core', () => {
         expect(blockedCount).toBe(1);
     });
 
-    test('_doGemsCollide: absorber-adjacent gem blocks placement', async ({ page }) => {
+    test('_doGemsCollide: absorber behaves like other gems (touching is fine, overlap collides)', async ({ page }) => {
         await startLevel(page, 'HARD');
-        await page.evaluate(() => window.game.addPlayerGem('BLACK', 0, 0));
-        await page.evaluate(() => window.game.addPlayerGem('YELLOW', 0, 0));
+
+        // BLACK at (0,0) occupies world (0,0) and (1,0). YELLOW at (2,0) touches it
+        // horizontally without sharing solid edges → both should be valid.
+        await page.evaluate(() => {
+            window.game.addPlayerGem('BLACK', 0, 0);
+            window.game.addPlayerGem('YELLOW', 2, 0);
+        });
+        const touching = await page.evaluate(() =>
+            gameState.playerGems.map(g => ({ name: g.name, isValid: g.isValid }))
+        );
+        expect(touching.find(g => g.name === 'BLACK').isValid).toBe(true);
+        expect(touching.find(g => g.name === 'YELLOW').isValid).toBe(true);
+
+        // Move YELLOW on top of BLACK → real overlap, both become invalid.
+        await page.evaluate(() => {
+            const yellow = gameState.playerGems.find(g => g.name === 'YELLOW');
+            window.game.movePlayerGem(yellow.id, 0, 0);
+        });
+        const overlapping = await page.evaluate(() =>
+            gameState.playerGems.map(g => ({ name: g.name, isValid: g.isValid }))
+        );
+        expect(overlapping.find(g => g.name === 'BLACK').isValid).toBe(false);
+        expect(overlapping.find(g => g.name === 'YELLOW').isValid).toBe(false);
     });
 
     // --- Secret placement / start failure --------------------------------------
