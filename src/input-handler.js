@@ -186,6 +186,7 @@ class InputHandler {
                     startGrid: grid,
                     visited: new Set(),
                     painted: false,
+                    axis: null,                 // 'row' or 'col', locked on first move
                 };
             }
         }
@@ -239,12 +240,9 @@ class InputHandler {
 
                 this.ui.redrawAll();
             } else if (this.blockPaintInfo && Math.sqrt(dx * dx + dy * dy) > 10) {
-                // Swipe-to-paint-X: snapshot history once on the first crossing
-                // (also paint the start cell), then paint every cell along the
-                // line from the previous sample to the current one — fast moves
-                // produce sparse pointermove samples, so we must interpolate.
                 if (!this.blockPaintInfo.painted) {
                     this.blockPaintInfo.painted = true;
+                    this.blockPaintInfo.axis = Math.abs(dx) >= Math.abs(dy) ? 'row' : 'col';
                     this.game.pushHistory();
                     const s = this.blockPaintInfo.startGrid;
                     this._paintBlockCell(s.x, s.y);
@@ -253,6 +251,12 @@ class InputHandler {
                 const canvasRect = this.gemCanvas.getBoundingClientRect();
                 const grid = this.renderer._canvasToGridCoords(
                     clientX - canvasRect.left, clientY - canvasRect.top);
+                const s = this.blockPaintInfo.startGrid;
+                if (this.blockPaintInfo.axis === 'row') {
+                    grid.y = s.y;
+                } else {
+                    grid.x = s.x;
+                }
                 const last = this.blockPaintInfo.lastGrid;
                 for (const [x, y] of this._lineCells(last.x, last.y, grid.x, grid.y)) {
                     if (this.game._inBounds(x, y)) this._paintBlockCell(x, y);

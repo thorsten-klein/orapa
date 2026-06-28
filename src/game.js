@@ -911,6 +911,8 @@ class Game {
                 return false;
             });
             if (isOccupied) return;
+            const qr = gameState.permanentQueryResults.find(q => q.coords.x === x && q.coords.y === y);
+            if (qr && qr.result.colorHex !== null) return;
             if (!skipHistory) this._pushHistory();
             gameState.blockedCells.push({ x, y });
         }
