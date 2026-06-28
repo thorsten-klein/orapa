@@ -243,7 +243,7 @@
             </main>
             <footer id="controls-container">
                 <div id="actions-panel">
-                    <div class="mode-switch-wrapper">
+                    <div id="action-mode-wrapper" class="mode-switch-wrapper">
                         <span>Action Mode:</span>
                         <div id="mode-switch-container">
                             <button id="mode-wave-btn" class="mode-btn active">Send Ray</button>
@@ -251,6 +251,7 @@
                         </div>
                         <div id="query-counter">Queries: 0</div>
                     </div>
+                    <button id="place-gems-randomly-btn" hidden>Place gems randomly</button>
                     <div id="gem-toolbar-wrapper">
                         <span>Available Gems: (drag on board)</span>
                         <div id="gem-toolbar"></div>
@@ -282,6 +283,7 @@
         <div id="action-buttons" hidden>
             <button id="give-up-btn">Give Up</button>
             <button id="check-solution-btn">Submit Solution</button>
+            <button id="play-solution-btn" hidden disabled>Go to game (revealed)</button>
             <button id="finish-game-btn" hidden>Finish game</button>
         </div>
 

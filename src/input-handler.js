@@ -120,8 +120,11 @@ class InputHandler {
         const toolbarGemEl = target.closest('.toolbar-gem:not(.placed):not(.toolbar-gem-add)');
         const isOverCanvas = target.closest('#gem-canvas');
 
-        if ('touches' in e && (isOverCanvas || toolbarGemEl)) {
-            e.preventDefault();
+        if (gameState.revealedMode) {
+            if (isOverCanvas) {
+                this.dragStartInfo = { startX: clientX, startY: clientY, item: null };
+            }
+            return;
         }
 
         let potentialDragItem = null;
@@ -355,7 +358,7 @@ class InputHandler {
                     this.game.paintCell(gridCoords.x, gridCoords.y);
                 }
                 this.game.setSelectedLogEntry(null);
-            } else {
+            } else if (!gameState.revealedMode) {
                 const clickedGem = this.getGemAtCanvasPos(x, y);
                 if (clickedGem && this.dragStartInfo && this.dragStartInfo.item && this.dragStartInfo.item.id === clickedGem.id) {
                     this.game.setSelectedLogEntry(null);
