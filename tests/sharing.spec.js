@@ -526,6 +526,184 @@ test.describe('sharing + designer + path preview', () => {
         });
     });
 
+    test('BOARD_CREATION: fireAllRays traces all emitters through placed gems', async ({ page }) => {
+        await page.evaluate(() => {
+            gameState.customGemSet = ['YELLOW'];
+            gameState.customGemDefinitions = {};
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+            window.game.addPlayerGem('YELLOW', 2, 3);
+        });
+        await page.evaluate(() => window.game.fireAllRays());
+        const logLen = await page.evaluate(() => gameState.log.length);
+        // 2*(8+10) = 36 emitters
+        expect(logLen).toBe(36);
+        const waveCount = await page.evaluate(() => gameState.waveCount);
+        expect(waveCount).toBe(36);
+    });
+
+    test('BOARD_CREATION: fireAllRays is no-op when not in board-creation mode', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        await page.evaluate(() => window.game.fireAllRays());
+        const logLen = await page.evaluate(() => gameState.log.length);
+        expect(logLen).toBe(0);
+    });
+
+    test('BOARD_CREATION: sendWave and queryCell are blocked', async ({ page }) => {
+        await page.evaluate(() => {
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+        });
+        await page.evaluate(() => window.game.sendWave('T1'));
+        const waveLogs = await page.evaluate(() => gameState.log.length);
+        expect(waveLogs).toBe(0);
+        await page.evaluate(() => {
+            gameState.interactionMode = InteractionMode.QUERY;
+            window.game.queryCell(0, 0);
+        });
+        const queryLogs = await page.evaluate(() => gameState.log.length);
+        expect(queryLogs).toBe(0);
+    });
+
+    test('BOARD_CREATION: playSolutionBtn enabled only when all gems placed and valid', async ({ page }) => {
+        await page.evaluate(() => {
+            gameState.customGemSet = ['YELLOW'];
+            gameState.customGemDefinitions = {};
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+        });
+        // No gems placed → disabled
+        const dis1 = await page.evaluate(() => window.game.ui.playSolutionBtn.disabled);
+        expect(dis1).toBe(true);
+        // Place the gem → enabled
+        await page.evaluate(() => window.game.addPlayerGem('YELLOW', 0, 0));
+        const dis2 = await page.evaluate(() => window.game.ui.playSolutionBtn.disabled);
+        expect(dis2).toBe(false);
+        // Remove it → disabled again
+        await page.evaluate(() => {
+            const id = gameState.playerGems[0].id;
+            window.game.removePlayerGem(id);
+        });
+        const dis3 = await page.evaluate(() => window.game.ui.playSolutionBtn.disabled);
+        expect(dis3).toBe(true);
+    });
+
+    test('BOARD_CREATION: action-mode-wrapper is hidden, playSolutionBtn is visible', async ({ page }) => {
+        await page.evaluate(() => window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 }));
+        await page.waitForSelector('#screen-game:not(.hidden)');
+        await expect(page.locator('#action-mode-wrapper')).toBeHidden();
+        await expect(page.locator('#play-solution-btn')).not.toBeHidden();
+    });
+
+    test('BOARD_CREATION: handleStartCustomLevel in board-creation mode calls startBoardCreation', async ({ page }) => {
+        await page.evaluate(() => window.game.showCustomCreator('board-creation'));
+        await page.waitForSelector('#screen-custom-creator:not(.hidden)');
+        await page.click('#custom-color-selector .color-choice[data-color-key="YELLOW"]');
+        await page.click('#custom-shape-selector .shape-choice[data-shape-key="SHAPE_DIAMOND"]');
+        await page.click('#btn-add-custom-gem');
+        await page.click('#btn-start-custom-level');
+        await page.waitForSelector('#screen-game:not(.hidden)');
+        const level = await page.evaluate(() => gameState.level);
+        expect(level).toBe('BOARD_CREATION');
+    });
+
+    test('BOARD_CREATION: placeGemsRandomly places all gems and enables play-solution btn', async ({ page }) => {
+        await page.evaluate(() => {
+            gameState.customGemSet = ['YELLOW', 'RED'];
+            gameState.customGemDefinitions = {};
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+        });
+        const before = await page.evaluate(() => gameState.playerGems.length);
+        expect(before).toBe(0);
+        await page.evaluate(() => window.game.placeGemsRandomly());
+        const after = await page.evaluate(() => gameState.playerGems.length);
+        expect(after).toBe(2);
+        const allValid = await page.evaluate(() => gameState.playerGems.every(g => g.isValid));
+        expect(allValid).toBe(true);
+        const dis = await page.evaluate(() => window.game.ui.playSolutionBtn.disabled);
+        expect(dis).toBe(false);
+    });
+
+    test('BOARD_CREATION: placeGemsRandomly flips flippable gems when random < 0.5', async ({ page }) => {
+        const result = await page.evaluate(() => {
+            gameState.customGemSet = ['RED'];
+            gameState.customGemDefinitions = {};
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+            const origRandom = Math.random;
+            Math.random = () => 0.1;
+            window.game.placeGemsRandomly();
+            Math.random = origRandom;
+            return {
+                count: gameState.playerGems.length,
+                gem: gameState.playerGems[0],
+            };
+        });
+        expect(result.count).toBe(1);
+        expect(result.gem.isFlipped).toBe(true);
+    });
+
+    test('BOARD_CREATION: placeGemsRandomly is no-op outside board-creation mode', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        await page.evaluate(() => window.game.placeGemsRandomly());
+        const len = await page.evaluate(() => gameState.playerGems.length);
+        expect(len).toBe(0);
+    });
+
+    test('BOARD_CREATION: revealedMode blocks gem drag and canvas tap interactions', async ({ page }) => {
+        await page.evaluate(() => {
+            gameState.customGemSet = ['YELLOW'];
+            gameState.customGemDefinitions = {};
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+            window.game.addPlayerGem('YELLOW', 2, 3);
+        });
+        await page.evaluate(() => window.game.fireAllRays());
+        const revealed = await page.evaluate(() => gameState.revealedMode);
+        expect(revealed).toBe(true);
+        // Toolbar and play-solution btn should be hidden
+        await expect(page.locator('#gem-toolbar-wrapper')).toBeHidden();
+        await expect(page.locator('#play-solution-btn')).toBeHidden();
+        await expect(page.locator('#place-gems-randomly-btn')).toBeHidden();
+        // Path switch wrapper should be visible
+        await expect(page.locator('#path-switch-wrapper')).not.toBeHidden();
+        // Gem should not be movable — dispatch on canvas to get a valid target
+        const gemPos = await page.evaluate(() => {
+            const gem = gameState.playerGems[0];
+            return { x: gem.x, y: gem.y };
+        });
+        await page.evaluate(() => {
+            const canvas = document.getElementById('gem-canvas');
+            const rect = canvas.getBoundingClientRect();
+            canvas.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: rect.left + 50, clientY: rect.top + 50, bubbles: true }));
+        });
+        const dragInfo = await page.evaluate(() => window.game.ui.inputHandler.dragStartInfo);
+        expect(dragInfo).not.toBeNull();
+        expect(dragInfo.item).toBeNull();
+        const gemPosAfter = await page.evaluate(() => {
+            const gem = gameState.playerGems[0];
+            return { x: gem.x, y: gem.y };
+        });
+        expect(gemPosAfter).toEqual(gemPos);
+    });
+
+    test('BOARD_CREATION: revealedMode blocks toggleBlockedCell via canvas tap', async ({ page }) => {
+        await page.evaluate(() => {
+            gameState.customGemSet = ['YELLOW'];
+            gameState.customGemDefinitions = {};
+            window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 });
+            window.game.addPlayerGem('YELLOW', 2, 3);
+            window.game.fireAllRays();
+        });
+        const blockedBefore = await page.evaluate(() => gameState.blockedCells.length);
+        await page.evaluate(() => {
+            window.game.ui.inputHandler.handleCanvasTap(50, 50);
+        });
+        const blockedAfter = await page.evaluate(() => gameState.blockedCells.length);
+        expect(blockedAfter).toBe(blockedBefore);
+    });
+
+    test('BOARD_CREATION: place-gems-randomly-btn is visible in board creation', async ({ page }) => {
+        await page.evaluate(() => window.game.start('BOARD_CREATION', { gridWidth: 8, gridHeight: 10 }));
+        await page.waitForSelector('#screen-game:not(.hidden)');
+        await expect(page.locator('#place-gems-randomly-btn')).not.toBeHidden();
+    });
+
     test('updateEndShareSection: no gameId hides the section (and no-section early return)', async ({ page }) => {
         await startLevel(page, 'GAME_SHEET');
         await page.evaluate(() => window.game.ui.updateEndShareSection());

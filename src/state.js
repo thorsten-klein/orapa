@@ -36,4 +36,5 @@ const gameState = {
     customGemSet: [],
     customGemDefinitions: {},
     drawSelectedColor: null,
+    revealedMode: false,
 };

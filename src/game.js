@@ -238,6 +238,7 @@ class Game {
         gameState.permanentQueryResults = [];
         gameState.blockedCells = [];
         gameState.drawSelectedColor = null;
+        gameState.revealedMode = false;
         this._undoStack = [];
         this._redoStack = [];
         this._sessionStartAt = Date.now();
@@ -332,6 +333,7 @@ class Game {
 
     sendWave(emitterId) {
         if (gameState.status !== GameStatus.PLAYING) return;
+        if (this.isBoardCreation() && !gameState.revealedMode) return;
 
         if (this.isGameSheet()) {
             if (gameState.interactionMode !== InteractionMode.WAVE) return;
@@ -364,6 +366,7 @@ class Game {
 
     queryCell(x, y) {
         if (gameState.interactionMode !== InteractionMode.QUERY) return;
+        if (this.isBoardCreation()) return;
         if (!this._inBounds(x, y)) return;
 
         const alreadyQueried = gameState.permanentQueryResults.some(qr => qr.coords.x === x && qr.coords.y === y);
@@ -715,6 +718,7 @@ class Game {
         gameState.permanentQueryResults = [];
         gameState.blockedCells = [];
         gameState.drawSelectedColor = null;
+        gameState.revealedMode = false;
         this._undoStack = [];
         this._redoStack = [];
         this._sessionStartAt = Date.now();
@@ -773,6 +777,128 @@ class Game {
 
         this._removeCurrentGame();
         this.showEndScreen(isCorrect);
+    }
+
+    fireAllRays() {
+        if (!this.isBoardCreation()) return;
+        gameState.revealedMode = true;
+        const { grid, map } = this._buildPlayerGrid(true);
+
+        gameState.log = [];
+        gameState.waveCount = 0;
+        gameState.selectedLogEntryId = null;
+        gameState.previewSourceEmitterId = null;
+
+        this.ui.renderer.setupEmitters();
+        this.ui.renderer.emitters.forEach(em =>
+            em.updateRect(this.ui.renderer.cellWidth, this.ui.renderer.cellHeight,
+                this.ui.renderer.gap, gameState.gridWidth, gameState.gridHeight,
+                this.ui.renderer.outerPadding));
+
+        const allEmitterIds = [];
+        for (let i = 1; i <= gameState.gridWidth; i++) {
+            allEmitterIds.push(`T${i}`, `B${i}`);
+        }
+        for (let i = 1; i <= gameState.gridHeight; i++) {
+            allEmitterIds.push(`L${i}`, `R${i}`);
+        }
+
+        for (const emitterId of allEmitterIds) {
+            const result = tracePath(grid, map, emitterId, this);
+            const logEntry = {
+                type: InteractionMode.WAVE,
+                id: emitterId,
+                result,
+                path: result.path,
+                playerPath: null,
+                playerResult: null,
+            };
+            gameState.log.push(logEntry);
+            gameState.waveCount++;
+            this.ui.renderer.updateEmitterFromLog(logEntry);
+        }
+
+        this.ui.gemToolbarWrapper.hidden = true;
+        this.ui.playSolutionBtn.hidden = true;
+        this.ui.placeGemsRandomlyBtn.hidden = true;
+        this.ui.pathSwitchWrapper.hidden = false;
+        this.ui.refreshLog();
+        this.ui.updateLogEmptyState();
+        this.ui.updateQueryCounter();
+        this.ui.redrawAll();
+    }
+
+    placeGemsRandomly() {
+        if (!this.isBoardCreation()) return;
+        this._pushHistory();
+        const gemSet = gameState.customGemSet;
+        const placedGems = [];
+        let attempts = 0;
+
+        while (placedGems.length < gemSet.length && attempts < 500) {
+            attempts++;
+            placedGems.length = 0;
+
+            for (const gemName of gemSet) {
+                const gemDef = this.getGemDefinition(gemName);
+                if (!gemDef) continue;
+
+                let placed = false;
+                let singleGemAttempts = 0;
+
+                while (!placed && singleGemAttempts < 200) {
+                    singleGemAttempts++;
+
+                    const isFlippable = isShapeFlippable(gemDef.gridPattern);
+                    const shouldFlip = isFlippable && Math.random() < 0.5;
+
+                    let pattern = gemDef.gridPattern;
+                    if (shouldFlip) {
+                        pattern = flipGridPatternHorizontally(pattern);
+                    }
+
+                    const rotCount = Math.floor(Math.random() * 4);
+                    for (let i = 0; i < rotCount; i++) pattern = rotateGridPattern(pattern);
+
+                    const effH = pattern.length;
+                    const effW = pattern[0].length;
+
+                    if (gameState.gridWidth < effW || gameState.gridHeight < effH) continue;
+
+                    const x = Math.floor(Math.random() * (gameState.gridWidth - effW + 1));
+                    const y = Math.floor(Math.random() * (gameState.gridHeight - effH + 1));
+
+                    const newGem = {
+                        id: `player_${Date.now()}_${placedGems.length}`,
+                        name: gemName, x, y, rotation: rotCount * 90,
+                        isFlipped: shouldFlip,
+                        isFlippable: isFlippable,
+                        gridPattern: pattern,
+                        isValid: false,
+                    };
+
+                    if (this._isPlacementValid(newGem, placedGems)) {
+                        placedGems.push(newGem);
+                        placed = true;
+                    }
+                }
+                if (!placed) break;
+            }
+        }
+
+        if (placedGems.length !== gemSet.length) return;
+
+        gameState.playerGems = placedGems;
+        placedGems.forEach(gem => {
+            const h = gem.gridPattern.length;
+            const w = gem.gridPattern[0].length;
+            gem.cx = gem.x + w / 2;
+            gem.cy = gem.y + h / 2;
+        });
+        this._revalidateAllPlayerGems();
+        this.updateSolutionButtonState();
+        this.ui.updateToolbar();
+        this.ui.redrawAll();
     }
 
     addPlayerGem(gemName, x, y) {
@@ -1095,7 +1221,13 @@ class Game {
     }
 
     updateSolutionButtonState() {
-        if (this.isGameSheet() || this.isBoardCreation()) return;
+        if (this.isBoardCreation()) {
+            const allValid = gameState.playerGems.every(gem => gem.isValid);
+            const allPlaced = gameState.playerGems.length === gameState.customGemSet.length;
+            this.ui.playSolutionBtn.disabled = !(allValid && allPlaced);
+            return;
+        }
+        if (this.isGameSheet()) return;
         if (this.isExtreme()) {
             // In Extreme, accept any non-empty drawing.
             this.ui.checkSolutionBtn.disabled = gameState.playerGems.length === 0;

@@ -1099,6 +1099,30 @@ body.is-fullscreen #btn-fullscreen .icon-fs-exit { display: block; }
     margin-bottom: 0.5rem;
 }
 
+#place-gems-randomly-btn {
+    display: block;
+    width: 100%;
+    padding: 0.4rem 0.8rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px dashed var(--text-muted);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+#place-gems-randomly-btn:hover {
+    border-color: var(--correct-color);
+    color: var(--correct-color);
+    background: rgba(75, 194, 163, 0.08);
+}
+#place-gems-randomly-btn[hidden] { display: none !important; }
+
 #gem-toolbar {
     display: flex;
     gap: 0.5rem;

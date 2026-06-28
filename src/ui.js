@@ -73,9 +73,12 @@ class UI {
         this.actionButtons = document.getElementById('action-buttons');
         this.checkSolutionBtn = document.getElementById('check-solution-btn');
         this.giveUpBtn = document.getElementById('give-up-btn');
+        this.playSolutionBtn = document.getElementById('play-solution-btn');
+        this.placeGemsRandomlyBtn = document.getElementById('place-gems-randomly-btn');
         this.modeWaveBtn = document.getElementById('mode-wave-btn');
         this.modeQueryBtn = document.getElementById('mode-query-btn');
         this.queryCounter = document.getElementById('query-counter');
+        this.actionModeWrapper = document.getElementById('action-mode-wrapper');
         this.pathSwitchWrapper = document.getElementById('path-switch-wrapper');
         this.pathShowBtn = document.getElementById('path-show-btn');
         this.pathHideBtn = document.getElementById('path-hide-btn');
@@ -208,6 +211,8 @@ class UI {
 
         this.checkSolutionBtn.addEventListener('click', () => this.game.checkSolution());
         this.giveUpBtn.addEventListener('click', () => this.game.giveUp());
+        this.playSolutionBtn.addEventListener('click', () => this.game.fireAllRays());
+        this.placeGemsRandomlyBtn.addEventListener('click', () => this.game.placeGemsRandomly());
         this.modeWaveBtn.addEventListener('click', () => this.game.setInteractionMode(InteractionMode.WAVE));
         this.modeQueryBtn.addEventListener('click', () => this.game.setInteractionMode(InteractionMode.QUERY));
         this.pathShowBtn.addEventListener('click', () => this.game.setReflectionPath(true));
@@ -345,6 +350,9 @@ class UI {
         this.finishGameBtn.hidden = !isSheet;
         this.checkSolutionBtn.hidden = isSheet || isBoardCreation;
         this.giveUpBtn.hidden = isSheet || isBoardCreation;
+        this.playSolutionBtn.hidden = !isBoardCreation;
+        this.placeGemsRandomlyBtn.hidden = !isBoardCreation;
+        this.actionModeWrapper.hidden = isBoardCreation;
         if (isSheet || isBoardCreation) this.pathSwitchWrapper.hidden = true;
         this._applyPlayerPathWrapperVisibility();
     }
