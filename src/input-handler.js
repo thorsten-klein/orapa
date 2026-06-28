@@ -24,6 +24,7 @@ class InputHandler {
         // in WAVE mode and tracks which cells the pointer has visited so each
         // is painted exactly once with the same blocked-state per stroke.
         this.blockPaintInfo = null;
+        this._lastTouchEnd = 0;
 
         this.bindEvents();
     }
@@ -113,12 +114,17 @@ class InputHandler {
 
     handlePointerDown(e) {
         if (e instanceof MouseEvent && e.button !== 0) return;
+        if (e instanceof MouseEvent && Date.now() - this._lastTouchEnd < 500) return;
         const coords = this.getPointerCoordinates(e);
         if (!coords) return;
         const { clientX, clientY } = coords;
         const target = e.target;
         const toolbarGemEl = target.closest('.toolbar-gem:not(.placed):not(.toolbar-gem-add)');
         const isOverCanvas = target.closest('#gem-canvas');
+
+        if ('touches' in e && (isOverCanvas || toolbarGemEl)) {
+            e.preventDefault();
+        }
 
         if (gameState.revealedMode) {
             if (isOverCanvas) {
@@ -277,6 +283,7 @@ class InputHandler {
     }
 
     handlePointerUp(e) {
+        if ('touches' in e) this._lastTouchEnd = Date.now();
         if (this.longPressTimeout) clearTimeout(this.longPressTimeout);
         // End any in-progress swipe-to-paint stroke. If we actually painted,
         // skip the tap fallback so the start cell doesn't get re-toggled.
