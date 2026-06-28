@@ -175,6 +175,21 @@ test.describe('input handler', () => {
         expect(blocked).toBe(0);
     });
 
+    test('vertical swipe paints only the starting column', async ({ page }) => {
+        await startLevel(page, 'NORMAL');
+        const c0 = await canvasCenterForCell(page, 2, 1);
+        const c1 = await canvasCenterForCell(page, 2, 3);
+
+        await page.mouse.move(c0.cx, c0.cy);
+        await page.mouse.down();
+        await page.mouse.move(c0.cx, c0.cy + 20);  // cross threshold vertically
+        await page.mouse.move(c1.cx, c1.cy);
+        await page.mouse.up();
+
+        const blocked = await page.evaluate(() => gameState.blockedCells.map(c => `${c.x},${c.y}`).sort());
+        expect(blocked).toEqual(['2,1', '2,2', '2,3']);
+    });
+
     test('fast swipe (sparse pointermove samples) still paints every cell along the line', async ({ page }) => {
         await startLevel(page, 'NORMAL');
         // Pre-compute centers for cells (0,1) through (5,1). With only TWO move
